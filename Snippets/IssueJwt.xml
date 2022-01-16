@@ -1,0 +1,35 @@
+<policies>
+  <inbound>
+    <base />
+      <send-request ignore-error="true" timeout="20" response-variable-name="bearerToken" mode="new">
+        <set-url>https://login.windows.net/{{tenant-id}}/oauth2/token</set-url>
+        <set-method>POST</set-method>
+        <set-header name="Content-Type" exists-action="override">
+          <value>application/x-www-form-urlencoded</value>
+        </set-header>
+        <set-body>
+          @{
+              return "client_id={{apim-clientId}}&scope={{api-client-id/.default}}&client_secret={{client_secret}}&grant_type=client_credentials";
+          }
+        </set-body>
+      </send-request>
+
+      <set-header name="Authorization" exists-action="override">
+        <value>
+          @("Bearer " + (String)((IResponse)context.Variables["bearerToken"]).Body.As<JObject>()["access_token"])
+      </value>
+      </set-header>
+
+      <!--  Don't expose APIM subscription key to the backend. -->
+      <set-header exists-action="delete" name="Ocp-Apim-Subscription-Key"/>
+  </inbound>
+  <backend>
+    <base />
+  </backend>
+  <outbound>
+    <base />
+  </outbound>
+  <on-error>
+    <base />
+  </on-error>
+</policies>
